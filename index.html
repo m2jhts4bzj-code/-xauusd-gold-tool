@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="description" content="XAUUSD 黄金短线多周期技术评分工具。使用第三方参考行情，不连接券商交易账户。">
+  <title>XAUUSD 黄金短线评分台</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--panel:#121d2d;--panel2:#172438;--line:#26364d;--text:#e8eef7;--muted:#9aabc1;--green:#31c48d;--red:#ff6878;--amber:#f4bd55;--blue:#70a7ff;--radius:16px}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0b1220 0%,#0d1727 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Noto Sans CJK SC",sans-serif;font-size:15px;line-height:1.5}
+    button,input{font:inherit}
+    .wrap{max-width:980px;margin:0 auto;padding:16px 14px 44px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 0 16px}
+    h1{font-size:22px;line-height:1.2;margin:0 0 4px;font-weight:800;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:12px}
+    .header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#101b2a;border-radius:999px;padding:6px 10px;color:var(--muted);font-size:12px;white-space:nowrap}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);display:inline-block}
+    .btn{border:1px solid #38577e;background:#1a3454;color:#eaf2ff;border-radius:11px;padding:9px 13px;font-weight:700;cursor:pointer}
+    .btn:disabled{opacity:.55;cursor:wait}
+    .panel{background:rgba(18,29,45,.94);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin:12px 0;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+    .panel h2{font-size:15px;margin:0 0 12px;font-weight:800}
+    .notice{border:1px solid #5a4927;background:#2a2418;color:#f2d79e;padding:11px 13px;border-radius:12px;font-size:12px;margin-bottom:12px}
+    .quote-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;align-items:stretch}
+    .quote-main,.mini-stat{background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:12px}
+    .quote-label,.mini-label{font-size:11px;color:var(--muted)}
+    .quote-price{font-size:29px;line-height:1.2;font-weight:850;letter-spacing:-.5px;margin:5px 0}
+    .mini-value{font-size:17px;font-weight:750;margin-top:6px;overflow-wrap:anywhere}
+    .source-line{color:var(--muted);font-size:11px;margin-top:9px}
+    .tf-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+    .tf-btn{padding:10px 4px;border-radius:10px;border:1px solid var(--line);background:#101a29;color:var(--muted);font-weight:800}
+    .tf-btn.active{background:#203d61;border-color:#5c8ec8;color:#fff}
+    .score-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .score-card{padding:13px;border-radius:14px;background:var(--panel2);border:1px solid var(--line)}
+    .score-card.long{border-top:3px solid var(--green)}.score-card.short{border-top:3px solid var(--red)}
+    .score-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}
+    .score-num{font-size:35px;line-height:1.15;font-weight:900;margin:7px 0 5px;font-variant-numeric:tabular-nums}
+    .long .score-num{color:var(--green)}.short .score-num{color:var(--red)}
+    .bar{height:6px;background:#26364a;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;border-radius:99px}
+    .long .bar span{background:var(--green)}.short .bar span{background:var(--red)}
+    .direction{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .direction-name{font-size:23px;font-weight:900}
+    .direction-meta{font-size:12px;color:var(--muted);text-align:right}
+    .tag{display:inline-block;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:800;background:#25364c;color:#c7d5e8}
+    .tag.good{background:#153a31;color:#8ee5c2}.tag.bad{background:#40242c;color:#ffabb4}.tag.warn{background:#3d321c;color:#f3d38b}
+    .tf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+    .tf-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 8px;min-width:0}
+    .tf-card strong{display:block;font-size:13px;margin-bottom:5px}
+    .tf-card .tf-score{font-size:18px;font-weight:850}
+    .tf-card small{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+    .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .metric-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .metric{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px}
+    .metric span{display:block;color:var(--muted);font-size:11px}.metric b{display:block;font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums}
+    .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .plan-item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px}
+    .plan-item span{display:block;color:var(--muted);font-size:11px}.plan-item b{display:block;font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums}
+    .muted{color:var(--muted)}.small{font-size:11px}.warning-text{color:#f1d28f}.good-text{color:var(--green)}.bad-text{color:var(--red)}
+    .field-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+    .field label{display:block;color:var(--muted);font-size:11px;margin:0 0 5px}
+    .field input{width:100%;min-width:0;border:1px solid #34475f;background:#0d1725;color:var(--text);border-radius:9px;padding:10px 9px;outline:none}
+    .field input:focus{border-color:#6c9fe0}
+    .checkline{display:flex;align-items:flex-start;gap:9px;margin-top:12px;color:#d8e3f2;font-size:13px}
+    .checkline input{width:18px;height:18px;accent-color:#6fa6ff;flex:0 0 auto;margin:1px 0 0}
+    .gate-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+    .gate-list li{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;font-size:12px}
+    .gate-icon{font-weight:900;min-width:17px}.gate-list li.ok .gate-icon{color:var(--green)}.gate-list li.no .gate-icon{color:var(--red)}
+    .gate-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .gate-summary strong{font-size:16px}
+    .foot{color:var(--muted);font-size:11px;line-height:1.65;margin-top:14px}
+    a{color:#8dbbff;text-decoration:none}a:hover{text-decoration:underline}
+    .empty{color:var(--muted);font-size:13px;padding:14px 4px}
+    .error{color:#ffabb4}
+    @media(max-width:650px){.wrap{padding:12px 10px 34px}header{align-items:flex-start}.header-actions{max-width:45%}h1{font-size:19px}.quote-grid{grid-template-columns:1fr 1fr}.quote-main{grid-column:1/-1}.quote-price{font-size:32px}.tf-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.tf-card{padding:8px 5px}.tf-card .tf-score{font-size:16px}.tf-card small{font-size:9px}.cols{grid-template-columns:1fr}.field-grid{grid-template-columns:1fr 1fr}.field-grid .field:last-child{grid-column:1/-1}}
+    @media(max-width:370px){.pill{font-size:10px;padding:5px 7px}.btn{padding:8px 9px}.score-num{font-size:30px}.direction-name{font-size:20px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div>
+        <h1>XAUUSD 黄金短线评分台</h1>
+        <div class="sub">M1 · M5 · M15 · M30 · H1 多周期技术分析</div>
+      </div>
+      <div class="header-actions">
+        <span class="pill" id="statusPill"><i class="dot"></i><span id="statusText">等待连接</span></span>
+        <button class="btn" id="refreshBtn" type="button">刷新行情</button>
+      </div>
+    </header>
+
+    <div class="notice">
+      本工具读取 XAUS 第三方 XAU/USD 参考行情，不是 TMGM 报价，不连接 MT5，也不会下单。评分是技术条件匹配分，不是胜率或盈利概率。行情未通过新鲜度和风险检查时，系统会拦截交易计划。
+    </div>
+
+    <section class="panel">
+      <div class="quote-grid">
+        <div class="quote-main">
+          <div class="quote-label">第三方 XAU/USD 参考现货价 · USD/盎司</div>
+          <div class="quote-price" id="spotPrice">--</div>
+          <div class="small muted" id="spotFreshness">尚未取得行情</div>
+          <div class="source-line">数据来源：<a href="https://xaus.com/api/" target="_blank" rel="noopener">XAUS API</a> · 参考中间价，非可成交报价</div>
+        </div>
+        <div class="mini-stat"><div class="mini-label">数据时间（本地）</div><div class="mini-value" id="updatedAt">--</div></div>
+        <div class="mini-stat"><div class="mini-label">已载入周期</div><div class="mini-value" id="loadedCount">0 / 5</div></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>选择分析周期</h2>
+      <div class="tf-tabs" id="tfTabs">
+        <button class="tf-btn" data-tf="M1" type="button">M1</button>
+        <button class="tf-btn active" data-tf="M5" type="button">M5</button>
+        <button class="tf-btn" data-tf="M15" type="button">M15</button>
+        <button class="tf-btn" data-tf="M30" type="button">M30</button>
+        <button class="tf-btn" data-tf="H1" type="button">H1</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 id="scoreTitle">M5 多空评分</h2>
+      <div class="score-grid">
+        <div class="score-card long"><div class="score-top"><b>做多评分</b><span>0–100</span></div><div class="score-num" id="longScore">--</div><div class="bar"><span id="longBar" style="width:0%"></span></div></div>
+        <div class="score-card short"><div class="score-top"><b>做空评分</b><span>0–100</span></div><div class="score-num" id="shortScore">--</div><div class="bar"><span id="shortBar" style="width:0%"></span></div></div>
+      </div>
+      <div class="panel" style="margin:10px 0 0;padding:12px;background:#101a29">
+        <div class="direction"><div><div class="small muted">当前周期方向判断</div><div class="direction-name" id="directionName">等待数据</div></div><div class="direction-meta"><div id="directionReason">需要有效K线和指标</div><div style="margin-top:5px" id="scoreMeaning">评分不代表胜率</div></div></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>五周期方向对照</h2>
+      <div class="tf-grid" id="multiTfGrid">
+        <div class="empty">等待行情数据…</div>
+      </div>
+      <div class="small muted" id="multiTfSummary" style="margin-top:10px">至少需要 3 个有效周期同向，才通过多周期过滤。</div>
+    </section>
+
+    <div class="cols">
+      <section class="panel">
+        <h2>技术指标（已收盘K线）</h2>
+        <div class="metric-list" id="indicatorList"><div class="empty">等待有效K线…</div></div>
+      </section>
+      <section class="panel">
+        <h2>参考进场与止盈止损</h2>
+        <div class="plan-grid" id="planGrid"><div class="empty">数据就绪后生成参考价位</div></div>
+        <p class="small muted" id="planNote" style="margin:10px 0 0">价位基于第三方参考价和 ATR 计算；必须以 TMGM MT5 实时报价复核。</p>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>券商报价与风险过滤</h2>
+      <div class="field-grid">
+        <div class="field"><label for="mt5Bid">MT5 Bid（卖价）</label><input id="mt5Bid" type="number" inputmode="decimal" step="0.001" placeholder="输入 MT5 卖价"></div>
+        <div class="field"><label for="mt5Ask">MT5 Ask（买价）</label><input id="mt5Ask" type="number" inputmode="decimal" step="0.001" placeholder="输入 MT5 买价"></div>
+        <div class="field"><label for="maxSpread">最大允许点差（美元）</label><input id="maxSpread" type="number" inputmode="decimal" min="0.01" step="0.01" value="0.80"></div>
+      </div>
+      <div class="small muted" id="spreadReadout" style="margin-top:8px">请输入 MT5 Bid 和 Ask，系统才可核对实际点差。</div>
+      <label class="checkline"><input id="newsChecked" type="checkbox"><span>我已手动核对经济日历，确认未来 30 分钟没有可能影响黄金的高影响数据或央行讲话。</span></label>
+      <p class="small warning-text" style="margin:7px 0 0">新闻日历没有自动接通，默认拦截交易。勾选只代表你自己完成核对，不代表本工具已自动验证新闻。</p>
+      <p class="small muted" style="margin:7px 0 0">经济日历可参考：<a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener">Forex Factory Calendar</a>。请同时核对日本/美国时间和事件实际发布时间。</p>
+    </section>
+
+    <section class="panel">
+      <div class="gate-summary"><strong>交易许可检查</strong><span id="tradeStatus" class="tag warn">等待数据</span></div>
+      <ul class="gate-list" id="gateList"><li class="no"><span class="gate-icon">!</span><span>尚未完成行情检查。</span></li></ul>
+      <p class="foot">只有所有检查均通过时才显示“过滤条件通过”；这仍不构成下单建议或盈利保证。点差、报价和新闻核验均需由你在 MT5/经济日历中确认。建议先模拟盘测试，勿因评分单独开仓。</p>
+    </section>
+
+    <div class="foot">
+      <b>数据与限制：</b>XAUS 文档说明其免费 API 提供 XAU/USD 参考价及 1m、5m、15m、30m、60m OHLC 数据，接口有缓存与调用限制。第三方参考中间价可能与 TMGM 的 Bid/Ask、点差、服务器时间和成交价不同。本工具不读取 TMGM 私有行情、不包含自动新闻日历、不发送交易指令。<br>
+      接口文档：<a href="https://xaus.com/api/" target="_blank" rel="noopener">xaus.com/api</a> · 最近刷新：<span id="lastRefresh">--</span>
+    </div>
+  </main>
+
+<script>
+(() => {
+  'use strict';
+
+  const API = 'https://xaus.com/api/v1';
+  const TF = {
+    M1:  { label:'M1',  interval:'1m',  range:'1d',  ms:60_000 },
+    M5:  { label:'M5',  interval:'5m',  range:'5d',  ms:300_000 },
+    M15: { label:'M15', interval:'15m', range:'5d',  ms:900_000 },
+    M30: { label:'M30', interval:'30m', range:'1mo', ms:1_800_000 },
+    H1:  { label:'H1',  interval:'60m', range:'3mo', ms:3_600_000 }
+  };
+  const state = {
+    selectedTf:'M5', quote:null, quoteFresh:false, quoteAgeSec:null,
+    analyses:{}, validations:{}, busy:false, lastError:'', lastRefresh:null
+  };
+  const $ = id => document.getElementById(id);
+  const num = (v, fallback=NaN) => Number.isFinite(Number(v)) ? Number(v) : fallback;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const fmt = (v, digits=2) => Number.isFinite(v) ? v.toLocaleString('en-US',{minimumFractionDigits:digits,maximumFractionDigits:digits}) : '--';
+  const escapeHtml = value => String(value??'').replace(/[&<>\"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch]));
+  const timeText = value => {
+    if (!Number.isFinite(value)) return '--';
+    return new Date(value).toLocaleString('zh-CN',{hour12:false,month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  };
+  const ageText = seconds => {
+    if (!Number.isFinite(seconds) || seconds < 0) return '时间戳无效';
+    if (seconds < 60) return `${Math.round(seconds)} 秒前`;
+    if (seconds < 3600) return `${Math.floor(seconds/60)} 分钟前`;
+    return `${(seconds/3600).toFixed(1)} 小时前`;
+  };
+
+  function ema(values, period) {
+    const out = Array(values.length).fill(null);
+    if (!Number.isInteger(period) || period < 1) return out;
+    let seed = [], prev = null;
+    const k = 2/(period+1);
+    for (let i=0;i<values.length;i++) {
+      const v = values[i];
+      if (!Number.isFinite(v)) { seed=[]; prev=null; continue; }
+      if (prev === null) {
+        seed.push(v);
+        if (seed.length === period) {
+          prev = seed.reduce((a,b)=>a+b,0)/period;
+          out[i] = prev;
+        }
+      } else {
+        prev = v*k + prev*(1-k);
+        out[i] = prev;
+      }
+    }
+    return out;
+  }
+
+  function rsiSeries(closes, period=14) {
+    const out = Array(closes.length).fill(null);
+    if (closes.length <= period) return out;
+    let gain=0, loss=0;
+    for (let i=1;i<=period;i++) {
+      const d=closes[i]-closes[i-1]; gain+=Math.max(d,0); loss+=Math.max(-d,0);
+    }
+    let avgGain=gain/period, avgLoss=loss/period;
+    const value = () => avgLoss===0 ? (avgGain===0?50:100) : 100-(100/(1+avgGain/avgLoss));
+    out[period]=value();
+    for (let i=period+1;i<closes.length;i++) {
+      const d=closes[i]-closes[i-1];
+      avgGain=(avgGain*(period-1)+Math.max(d,0))/period;
+      avgLoss=(avgLoss*(period-1)+Math.max(-d,0))/period;
+      out[i]=value();
+    }
+    return out;
+  }
+
+  function wilder(values, period) {
+    const out=Array(values.length).fill(null);
+    let seed=[], prev=null;
+    for (let i=0;i<values.length;i++) {
+      const v=values[i];
+      if (!Number.isFinite(v)) { seed=[]; prev=null; continue; }
+      if (prev===null) {
+        seed.push(v);
+        if (seed.length===period) {
+          prev=seed.reduce((a,b)=>a+b,0)/period;
+          out[i]=prev;
+        }
+      } else {
+        prev=((prev*(period-1))+v)/period;
+        out[i]=prev;
+      }
+    }
+    return out;
+  }
+
+  function macdSeries(closes) {
+    const fast=ema(closes,12), slow=ema(closes,26);
+    const line=closes.map((_,i)=>Number.isFinite(fast[i])&&Number.isFinite(slow[i])?fast[i]-slow[i]:null);
+    const signal=ema(line,9);
+    const hist=line.map((v,i)=>Number.isFinite(v)&&Number.isFinite(signal[i])?v-signal[i]:null);
+    return {line,signal,hist};
+  }
+
+  function atrAdx(candles, period=14) {
+    const tr=Array(candles.length).fill(null), plus=Array(candles.length).fill(null), minus=Array(candles.length).fill(null);
+    for(let i=1;i<candles.length;i++){
+      const c=candles[i], p=candles[i-1];
+      tr[i]=Math.max(c.h-c.l,Math.abs(c.h-p.c),Math.abs(c.l-p.c));
+      const up=c.h-p.h, down=p.l-c.l;
+      plus[i]=(up>down&&up>0)?up:0;
+      minus[i]=(down>up&&down>0)?down:0;
+    }
+    const atr=wilder(tr,period), plusSm=wilder(plus,period), minusSm=wilder(minus,period);
+    const pdi=atr.map((a,i)=>Number.isFinite(a)&&a>0?100*plusSm[i]/a:null);
+    const mdi=atr.map((a,i)=>Number.isFinite(a)&&a>0?100*minusSm[i]/a:null);
+    const dx=pdi.map((p,i)=>Number.isFinite(p)&&Number.isFinite(mdi[i])&&(p+mdi[i])>0?100*Math.abs(p-mdi[i])/(p+mdi[i]):null);
+    const adx=wilder(dx,period);
+    return {atr,pdi,mdi,adx};
+  }
+
+  function bollinger(closes, period=20, mult=2) {
+    const mid=Array(closes.length).fill(null), upper=Array(closes.length).fill(null), lower=Array(closes.length).fill(null);
+    for(let i=period-1;i<closes.length;i++){
+      const slice=closes.slice(i-period+1,i+1), mean=slice.reduce((a,b)=>a+b,0)/period;
+      const variance=slice.reduce((a,b)=>a+(b-mean)**2,0)/period;
+      const sd=Math.sqrt(variance); mid[i]=mean; upper[i]=mean+mult*sd; lower[i]=mean-mult*sd;
+    }
+    return {mid,upper,lower};
+  }
+
+  function lastFinite(arr) {
+    for(let i=arr.length-1;i>=0;i--) if(Number.isFinite(arr[i])) return arr[i];
+    return null;
+  }
+
+  function normalizeTime(v) {
+    if (typeof v==='string' && !/^\d+(\.\d+)?$/.test(v)) return Date.parse(v);
+    const n=Number(v);
+    if (!Number.isFinite(n)) return NaN;
+    return n < 1e12 ? n*1000 : n;
+  }
+
+  function normalizeCandles(payload) {
+    const rows=Array.isArray(payload)?payload:(payload?.points||payload?.candles||payload?.data||[]);
+    if(!Array.isArray(rows)) return [];
+    const map=new Map();
+    for(const r of rows){
+      const t=normalizeTime(r.t??r.time??r.timestamp??r.date);
+      const o=num(r.o??r.open), h=num(r.h??r.high), l=num(r.l??r.low), c=num(r.c??r.close), v=num(r.v??r.volume,0);
+      if(!Number.isFinite(t)||![o,h,l,c].every(Number.isFinite)) continue;
+      if(h<Math.max(o,c)||l>Math.min(o,c)||h<l) continue;
+      map.set(t,{t,o,h,l,c,v});
+    }
+    return [...map.values()].sort((a,b)=>a.t-b.t);
+  }
+
+  function validateCandles(raw, tfKey, now=Date.now()) {
+    const cfg=TF[tfKey];
+    const candles=normalizeCandles(raw);
+    const result={ok:false,candles:[],rawCount:candles.length,closedCount:0,gapCount:0,ageSec:null,error:''};
+    if(!cfg){result.error='未知周期';return result;}
+    if(candles.length<202){result.error=`K线不足（${candles.length} 根，至少需要 202 根）`;return result;}
+    const last=candles[candles.length-1];
+    result.ageSec=(now-last.t)/1000;
+    if(result.ageSec < -60){result.error='K线时间戳超前';return result;}
+    const maxAge=Math.max(cfg.ms*4,10*60_000);
+    if(result.ageSec>maxAge/1000){result.error=`最新K线过期（${ageText(result.ageSec)}）`;return result;}
+    const closed=candles.filter(c=>(now-c.t)>=cfg.ms);
+    result.closedCount=closed.length;
+    if(closed.length<200){result.error=`已收盘K线不足（${closed.length} 根）`;return result;}
+    const recent=closed.slice(-120);
+    let gaps=0;
+    for(let i=1;i<recent.length;i++){
+      const d=recent[i].t-recent[i-1].t;
+      if(d>cfg.ms*1.5 && d<=cfg.ms*6) gaps++;
+    }
+    result.gapCount=gaps;
+    if(gaps>0){result.error=`最近K线存在 ${gaps} 处疑似缺失`;return result;}
+    result.ok=true;result.candles=closed;return result;
+  }
+
+  function analyzeCandles(candles) {
+    if(!Array.isArray(candles)||candles.length<200) throw new Error('至少需要 200 根已收盘K线');
+    const closes=candles.map(c=>c.c);
+    const e20=ema(closes,20), e50=ema(closes,50), e200=ema(closes,200);
+    const rsi=rsiSeries(closes,14), macd=macdSeries(closes), ad=atrAdx(candles,14), bb=bollinger(closes,20,2);
+    const close=closes[closes.length-1];
+    const values={ema20:lastFinite(e20),ema50:lastFinite(e50),ema200:lastFinite(e200),rsi14:lastFinite(rsi),macd:lastFinite(macd.line),macdSignal:lastFinite(macd.signal),macdHist:lastFinite(macd.hist),adx14:lastFinite(ad.adx),plusDI:lastFinite(ad.pdi),minusDI:lastFinite(ad.mdi),atr14:lastFinite(ad.atr),bbMid:lastFinite(bb.mid),bbUpper:lastFinite(bb.upper),bbLower:lastFinite(bb.lower),close};
+    if(Object.values(values).some(v=>!Number.isFinite(v))) throw new Error('指标预热不足或数据无效');
+    let long=50, short=50;
+    if(values.ema20>values.ema50&&values.ema50>values.ema200){long+=20;short-=20;}
+    else if(values.ema20<values.ema50&&values.ema50<values.ema200){short+=20;long-=20;}
+    else if(values.ema20>values.ema50){long+=8;short-=8;}
+    else if(values.ema20<values.ema50){short+=8;long-=8;}
+    if(close>values.ema20){long+=6;short-=6;}else{short+=6;long-=6;}
+    if(values.macdHist>0){long+=12;short-=12;}else{short+=12;long-=12;}
+    if(values.rsi14>=52&&values.rsi14<=68){long+=10;short-=4;}
+    else if(values.rsi14>=32&&values.rsi14<=48){short+=10;long-=4;}
+    if(values.adx14>=20){if(values.plusDI>values.minusDI){long+=12;short-=12;}else{short+=12;long-=12;}}
+    if(close>values.bbMid){long+=5;short-=5;}else{short+=5;long-=5;}
+    long=clamp(Math.round(long),0,100);short=clamp(Math.round(short),0,100);
+    let direction='观望';
+    if(long>=65&&long-short>=15)direction='偏多';
+    else if(short>=65&&short-long>=15)direction='偏空';
+    const atrPct=values.atr14/Math.max(close,0.000001);
+    const reasons=[];
+    if(direction==='偏多') reasons.push('均线/MACD/动能偏向多方');
+    else if(direction==='偏空') reasons.push('均线/MACD/动能偏向空方');
+    else reasons.push('多空条件未形成足够优势');
+    if(values.adx14<20) reasons.push('ADX低于20，趋势强度偏弱');
+    if(values.rsi14>75) reasons.push('RSI偏热，追多需谨慎');
+    if(values.rsi14<25) reasons.push('RSI偏弱，追空需谨慎');
+    return {longScore:long,shortScore:short,direction,reason:reasons.join('；'),values,atrPct};
+  }
+
+  function buildPlan(direction, price, atr, spread=0) {
+    if(!['偏多','偏空'].includes(direction)||![price,atr].every(Number.isFinite)||price<=0||atr<=0)return null;
+    const risk=Math.max(atr*1.5,Number.isFinite(spread)&&spread>0?spread*3:0);
+    const sign=direction==='偏多'?1:-1;
+    return {entry:price,sl:price-sign*risk,tp1:price+sign*risk,tp2:price+sign*risk*2,risk};
+  }
+
+  function evaluateGates(x) {
+    const checks=[
+      {ok:!!x.quoteFresh,label:'第三方参考行情新鲜',detail:x.quoteFresh?'报价时间戳有效且未超过 180 秒':'报价过期、时间戳缺失或数据源标记非 fresh'},
+      {ok:!!x.candleValid,label:'所选周期K线有效',detail:x.candleValid?'至少 200 根已收盘K线，OHLC和时间检查通过':(x.candleError||'K线无效')},
+      {ok:!!x.noGaps,label:'最近K线连续',detail:x.noGaps?'最近检查区间未发现短间隔缺失':`发现 ${x.gapCount||0} 处疑似缺失K线`},
+      {ok:!!x.brokerQuoteOk,label:'已输入 MT5 Bid / Ask',detail:x.brokerQuoteOk?'Bid、Ask均为有效正数且 Ask > Bid':'未输入有效的 MT5 Bid / Ask；第三方价不能代替券商报价'},
+      {ok:!!x.spreadOk,label:'MT5点差在阈值内',detail:x.spreadOk?`当前点差 ${fmt(x.spread,3)} 美元，阈值 ${fmt(x.maxSpread,2)}`:`当前点差 ${Number.isFinite(x.spread)?fmt(x.spread,3):'未知'} 美元，超过阈值或阈值无效`},
+      {ok:!!x.newsChecked,label:'新闻风险已人工核对',detail:x.newsChecked?'用户已手动确认未来30分钟无高影响事件':'自动新闻日历未接通，未完成手动核对，保守拦截'},
+      {ok:!!x.multiTfOk,label:'多周期方向一致',detail:`${x.alignedTfCount||0} / ${x.validTfCount||0} 个有效周期与当前方向一致，至少需要 3 个`},
+      {ok:!!x.scoreOk,label:'当前周期评分达到门槛',detail:x.scoreOk?`方向 ${x.direction}，评分 ${x.score} 分`:`当前方向为 ${x.direction||'观望'}，评分 ${Number.isFinite(x.score)?x.score:0} 分，未达到 65 分或多空差 15 分`},
+      {ok:!!x.priceMatchOk,label:'券商报价与参考价偏差可接受',detail:x.priceMatchOk?'MT5中间价与第三方参考价偏差在 ATR 容差内':'MT5报价与第三方参考价偏差过大，需重新核对品种/报价'},
+      {ok:!!x.volatilityOk,label:'单根ATR波动不过高',detail:x.volatilityOk?'ATR/价格未超过 0.50%':'当前周期ATR/价格超过 0.50%，波动过大，拦截'}
+    ];
+    return {checks,allowed:checks.every(c=>c.ok)};
+  }
+
+  async function fetchJson(url) {
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),15000);
+    try{
+      const res=await fetch(url,{method:'GET',cache:'no-store',signal:controller.signal,headers:{'Accept':'application/json'}});
+      if(!res.ok)throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    }finally{clearTimeout(timer);}
+  }
+
+  async function loadQuote() {
+    const data=await fetchJson(`${API}/spot?compact=1`);
+    const price=num(data.spot_usd_oz??data.xau?.price);
+    const time=Date.parse(data.price_as_of||data.data_state?.as_of||data.updated_at||'');
+    const status=data.data_state?.status;
+    const computedAge=Number.isFinite(time)?Math.max(0,(Date.now()-time)/1000):NaN;
+    const ageFromApi=num(data.data_state?.age_seconds,NaN);
+    const age=Number.isFinite(computedAge)?computedAge:ageFromApi;
+    if(!Number.isFinite(price)||price<=0)throw new Error('参考金价字段缺失');
+    const fresh=status==='fresh'&&Number.isFinite(age)&&age<=180&&Number.isFinite(time)&&time<=Date.now()+60_000;
+    state.quote={price,time,status,source:data.price_source||data.source||'XAUS',updatedAt:data.updated_at||null};
+    state.quoteFresh=fresh;state.quoteAgeSec=age;
+    return data;
+  }
+
+  async function loadTimeframe(key) {
+    const cfg=TF[key];
+    const url=`${API}/chart?symbol=xau&range=${encodeURIComponent(cfg.range)}&interval=${encodeURIComponent(cfg.interval)}`;
+    const data=await fetchJson(url);
+    if(data.data_state?.status&&data.data_state.status!=='fresh')throw new Error(`数据源状态：${data.data_state.status}`);
+    const validation=validateCandles(data,key);
+    if(!validation.ok)throw new Error(validation.error);
+    const analysis=analyzeCandles(validation.candles);
+    state.validations[key]=validation;
+    state.analyses[key]=analysis;
+    return analysis;
+  }
+
+  function setStatus(text,good=false) {
+    $('statusText').textContent=text;
+    const dot=$('statusPill').querySelector('.dot');
+    dot.style.background=good?'var(--green)':'var(--amber)';
+  }
+
+  function getManualQuotes() {
+    const bid=num($('mt5Bid').value), ask=num($('mt5Ask').value), maxSpread=num($('maxSpread').value);
+    const ok=Number.isFinite(bid)&&Number.isFinite(ask)&&bid>0&&ask>bid;
+    const spread=ok?ask-bid:NaN;
+    $('spreadReadout').textContent=ok?`MT5手动输入点差：${fmt(spread,3)} 美元；中间价：${fmt((bid+ask)/2,3)}。请确认来自同一时刻的 XAUUSD 报价。`:'请输入 MT5 Bid 和 Ask，系统才可核对实际点差。';
+    return {bid,ask,maxSpread,ok,spread,mid:ok?(bid+ask)/2:NaN};
+  }
+
+  function renderScore(a) {
+    $('scoreTitle').textContent=`${state.selectedTf} 多空评分`;
+    if(!a){$('longScore').textContent='--';$('shortScore').textContent='--';$('longBar').style.width='0%';$('shortBar').style.width='0%';$('directionName').textContent='等待有效数据';$('directionReason').textContent='所选周期未通过K线检查';return;}
+    $('longScore').textContent=a.longScore;$('shortScore').textContent=a.shortScore;
+    $('longBar').style.width=`${a.longScore}%`;$('shortBar').style.width=`${a.shortScore}%`;
+    $('directionName').textContent=a.direction;
+    $('directionName').style.color=a.direction==='偏多'?'var(--green)':a.direction==='偏空'?'var(--red)':'var(--muted)';
+    $('directionReason').textContent=a.reason;
+    $('scoreMeaning').textContent='技术匹配分，不是胜率';
+  }
+
+  function renderMultiTf(selected) {
+    const keys=Object.keys(TF), valid=keys.filter(k=>state.analyses[k]);
+    $('loadedCount').textContent=`${valid.length} / 5`;
+    $('multiTfGrid').innerHTML=keys.map(k=>{
+      const a=state.analyses[k];
+      if(!a)return `<div class="tf-card"><strong>${k}</strong><div class="tf-score muted">--</div><small>数据不可用</small></div>`;
+      const col=a.direction==='偏多'?'var(--green)':a.direction==='偏空'?'var(--red)':'var(--muted)';
+      const score=a.direction==='偏多'?a.longScore:a.direction==='偏空'?a.shortScore:Math.max(a.longScore,a.shortScore);
+      return `<div class="tf-card" style="${k===selected?'border-color:#6c9fe0':''}"><strong>${k}</strong><div class="tf-score" style="color:${col}">${score}</div><small>${a.direction} · 多${a.longScore}/空${a.shortScore}</small></div>`;
+    }).join('');
+    if(selected && state.analyses[selected]){
+      const dir=state.analyses[selected].direction;
+      const aligned=dir==='观望'?0:valid.filter(k=>state.analyses[k].direction===dir).length;
+      $('multiTfSummary').textContent=`有效周期 ${valid.length}/5；与 ${dir} 同向 ${aligned} 个。至少 3 个有效周期同向才通过过滤。`;
+    }else $('multiTfSummary').textContent='当前周期无有效分析；多周期过滤未通过。';
+  }
+
+  function renderIndicators(a) {
+    if(!a){$('indicatorList').innerHTML='<div class="empty">所选周期数据无效，指标不显示。</div>';return;}
+    const v=a.values;
+    const rows=[['EMA 20',v.ema20],['EMA 50',v.ema50],['EMA 200',v.ema200],['RSI 14',v.rsi14],['MACD柱',v.macdHist],['ADX 14',v.adx14],['+DI / -DI',`${fmt(v.plusDI,1)} / ${fmt(v.minusDI,1)}`],['ATR 14',v.atr14],['布林中轨',v.bbMid],['布林上轨',v.bbUpper],['布林下轨',v.bbLower],['最近收盘价',v.close]];
+    $('indicatorList').innerHTML=rows.map(([name,value])=>`<div class="metric"><span>${name}</span><b>${typeof value==='number'?fmt(value,2):value}</b></div>`).join('');
+  }
+
+  function renderPlan(a, manual) {
+    if(!a||a.direction==='观望'){
+      $('planGrid').innerHTML='<div class="empty">当前周期没有明确方向，不生成方向性价位。</div>';
+      $('planNote').textContent='先等待趋势条件形成；不要为了得到价位而强行交易。';return null;
+    }
+    const price=manual.ok?(a.direction==='偏多'?manual.ask:manual.bid):(state.quote?.price);
+    const plan=buildPlan(a.direction,price,a.values.atr14,manual.ok?manual.spread:0);
+    if(!plan){$('planGrid').innerHTML='<div class="empty">参考价或 ATR 无效，无法计算价位。</div>';return null;}
+    const items=[['参考进场',plan.entry],['止损 SL',plan.sl],['止盈 TP1（1R）',plan.tp1],['止盈 TP2（2R）',plan.tp2],['风险距离',plan.risk],['使用价格来源',manual.ok?'手动 MT5 报价':'第三方参考价']];
+    $('planGrid').innerHTML=items.map(([label,value])=>`<div class="plan-item"><span>${label}</span><b>${typeof value==='number'?fmt(value,2):value}</b></div>`).join('');
+    $('planNote').textContent=manual.ok?'进场参考使用你手动输入的 MT5 Ask（做多）或 Bid（做空）；请在下单前重新核对价格和点差。':'当前仅用 XAUS 第三方参考价估算，非 TMGM 可成交价；补录 MT5 Bid/Ask 后才可能通过交易许可检查。';
+    return plan;
+  }
+
+  function renderGates(a, plan) {
+    const manual=getManualQuotes();
+    const validKeys=Object.keys(TF).filter(k=>state.analyses[k]);
+    const dir=a?.direction||'观望';
+    const aligned=dir==='观望'?0:validKeys.filter(k=>state.analyses[k].direction===dir).length;
+    const valid=!!(a&&state.validations[state.selectedTf]?.ok);
+    const quoteDiff=manual.ok&&state.quote?Math.abs(manual.mid-state.quote.price):NaN;
+    const priceTolerance=a?Math.max(a.values.atr14*.75,.8):0;
+    const spreadOk=manual.ok&&Number.isFinite(manual.maxSpread)&&manual.maxSpread>0&&manual.spread<=manual.maxSpread;
+    const result=evaluateGates({
+      quoteFresh:state.quoteFresh,
+      candleValid:valid,
+      candleError:state.validations[state.selectedTf]?.error||'所选周期数据尚未加载',
+      noGaps:valid&&(state.validations[state.selectedTf]?.gapCount||0)===0,
+      gapCount:state.validations[state.selectedTf]?.gapCount||0,
+      brokerQuoteOk:manual.ok,
+      spread:manual.spread,maxSpread:manual.maxSpread,spreadOk,
+      newsChecked:$('newsChecked').checked,
+      multiTfOk:validKeys.length>=3&&aligned>=3,
+      alignedTfCount:aligned,validTfCount:validKeys.length,
+      scoreOk:!!a&&dir!=='观望'&&(dir==='偏多'?a.longScore:a.shortScore)>=65&&Math.abs(a.longScore-a.shortScore)>=15,
+      score:a?(dir==='偏多'?a.longScore:dir==='偏空'?a.shortScore:Math.max(a.longScore,a.shortScore)):0,
+      direction:dir,
+      priceMatchOk:manual.ok&&Number.isFinite(quoteDiff)&&quoteDiff<=priceTolerance,
+      volatilityOk:!!a&&a.atrPct<=.005
+    });
+    $('gateList').innerHTML=result.checks.map(c=>`<li class="${c.ok?'ok':'no'}"><span class="gate-icon">${c.ok?'✓':'✕'}</span><span><b>${c.label}</b><br><span class="muted">${escapeHtml(c.detail)}</span></span></li>`).join('');
+    const tag=$('tradeStatus');
+    tag.textContent=result.allowed?'过滤条件通过':'禁止执行 / 继续观察';
+    tag.className=`tag ${result.allowed?'good':'bad'}`;
+    return result;
+  }
+
+  function renderAll() {
+    const a=state.analyses[state.selectedTf]||null;
+    if(state.quote){
+      $('spotPrice').textContent=fmt(state.quote.price,2);
+      $('updatedAt').textContent=timeText(state.quote.time);
+      $('spotFreshness').textContent=`${state.quoteFresh?'新鲜度通过':'新鲜度未通过'} · ${ageText(state.quoteAgeSec)} · 状态 ${state.quote.status||'未知'}`;
+    }else{
+      $('spotPrice').textContent='--';$('updatedAt').textContent='--';$('spotFreshness').textContent='尚未取得有效参考行情';
+    }
+    renderScore(a);renderMultiTf(state.selectedTf);renderIndicators(a);
+    const manual=getManualQuotes();
+    const plan=renderPlan(a,manual);
+    const gates=renderGates(a,plan);
+    setStatus(gates.allowed?'过滤通过':(state.quote?'有拦截项':'行情未连接'),gates.allowed);
+  }
+
+  async function refreshAll() {
+    if(state.busy)return;
+    state.busy=true;$('refreshBtn').disabled=true;$('refreshBtn').textContent='读取中…';
+    setStatus('正在读取行情');
+    state.analyses={};state.validations={};state.quote=null;state.quoteFresh=false;state.lastError='';
+    renderAll();
+    const quotePromise=loadQuote().catch(e=>{state.lastError=`参考价：${e.message}`;return null;});
+    const tfPromises=Object.keys(TF).map(async key=>{
+      try{return await loadTimeframe(key);}catch(e){state.validations[key]={ok:false,error:e.message,gapCount:0};return null;}
+    });
+    await Promise.all([quotePromise,Promise.all(tfPromises)]);
+    state.lastRefresh=Date.now();
+    $('lastRefresh').textContent=timeText(state.lastRefresh);
+    if(!state.quote&&state.lastError){$('spotFreshness').textContent=state.lastError;}
+    renderAll();
+    state.busy=false;$('refreshBtn').disabled=false;$('refreshBtn').textContent='刷新行情';
+  }
+
+  function selectTf(key) {
+    if(!TF[key])return;
+    state.selectedTf=key;
+    document.querySelectorAll('.tf-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.tf===key));
+    renderAll();
+  }
+
+  function init() {
+    document.querySelectorAll('.tf-btn').forEach(btn=>btn.addEventListener('click',()=>selectTf(btn.dataset.tf)));
+    $('refreshBtn').addEventListener('click',refreshAll);
+    ['mt5Bid','mt5Ask','maxSpread','newsChecked'].forEach(id=>$(id).addEventListener('input',renderAll));
+    $('newsChecked').addEventListener('change',renderAll);
+    refreshAll();
+    setInterval(()=>refreshAll(),60_000);
+  }
+
+  if(typeof window!=='undefined'){
+    window.__XAU_TEST__={ema,rsiSeries,macdSeries,atrAdx,bollinger,normalizeCandles,validateCandles,analyzeCandles,buildPlan,evaluateGates,TF};
+  }
+  if(typeof document!=='undefined') document.addEventListener('DOMContentLoaded',init);
+})();
+</script>
+</body>
+</html>
